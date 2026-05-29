@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Evalora | AI Student Grading Suite</title>
+  <!-- Bootstrap 5 CSS + Icons + Google Fonts -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- React & ReactDOM & Babel -->
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Poppins', 'Inter', sans-serif;
+      background: radial-gradient(circle at 20% 30%, #0f172a, #0a0f2c, #050814);
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: #f0f3ff;
+    }
+    /* animated background orbs */
+    .glow-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+      animation: floatGlow 12s infinite alternate;
+    }
+    @keyframes floatGlow {
+      0% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+      100% { transform: translate(40px, -40px) scale(1.2); opacity: 0.6; }
+    }
+    .orb1 { background: #a855f7; width: 300px; height: 300px; top: -100px; left: -100px; }
+    .orb2 { background: #3b82f6; width: 400px; height: 400px; bottom: -150px; right: -100px; animation-duration: 18s; }
+    .orb3 { background: #ec4899; width: 250px; height: 250px; top: 40%; left: 70%; filter: blur(100px); animation-duration: 15s; }
+
+    /* Enhanced glassmorphism with hover shadow pop */
+    .glass-card {
+      background: rgba(15, 25, 45, 0.55);
+      backdrop-filter: blur(14px);
+      border-radius: 32px;
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3), 0 0 12px rgba(168, 85, 247, 0.2);
+      transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    }
+    .glass-card:hover {
+      border-color: rgba(168, 85, 247, 0.8);
+      box-shadow: 0 25px 40px -8px rgba(168, 85, 247, 0.7), 0 0 20px rgba(168, 85, 247, 0.5);
+      transform: translateY(-5px);
+    }
+
+    /* floating cap animation - NO STAR */
+    @keyframes floatCap {
+      0% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-6px) rotate(3deg); }
+      100% { transform: translateY(0px) rotate(0deg); }
+    }
+    .floating-cap {
+      animation: floatCap 2.2s ease-in-out infinite;
+      display: inline-block;
+      font-size: 1.8rem;
+      filter: drop-shadow(0 0 6px #a855f7);
+    }
+
+    /* navbar glass premium */
+    .navbar-neon {
+      background: rgba(8, 12, 28, 0.75);
+      backdrop-filter: blur(18px);
+      border-radius: 60px;
+      margin: 18px 20px;
+      padding: 8px 28px;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+    .nav-glow-link {
+      position: relative;
+      font-weight: 500;
+      color: #e2e8ff;
+      transition: 0.2s;
+      text-decoration: none;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    .nav-glow-link:hover {
+      color: #c084fc;
+      text-shadow: 0 0 6px #a855f7;
+    }
+    .nav-glow-link::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 0;
+      width: 0%;
+      height: 2px;
+      background: linear-gradient(90deg, #a855f7, #ec4899);
+      transition: 0.25s ease;
+      border-radius: 4px;
+      box-shadow: 0 0 6px #a855f7;
+    }
+    .nav-glow-link:hover::after {
+      width: 100%;
+    }
+
+    /* sidebar glass + neon glow pills */
+    .sidebar-neon {
+      background: rgba(6, 10, 25, 0.85);
+      backdrop-filter: blur(16px);
+      min-height: 100vh;
+      border-right: 1px solid rgba(168, 85, 247, 0.3);
+      transition: all 0.3s;
+    }
+    .sidebar-neon .nav-pill {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 20px;
+      margin: 8px 16px;
+      border-radius: 60px;
+      background: transparent;
+      color: #cbd5e6;
+      font-weight: 500;
+      transition: all 0.2s;
+      border: none;
+      width: calc(100% - 32px);
+    }
+    .sidebar-neon .nav-pill i { font-size: 1.3rem; width: 28px; }
+    .sidebar-neon .nav-pill:hover {
+      background: rgba(168, 85, 247, 0.2);
+      color: white;
+      transform: translateX(6px);
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+    }
+    .sidebar-neon .nav-pill.active {
+      background: linear-gradient(95deg, #a855f7, #3b82f6);
+      color: white;
+      box-shadow: 0 5px 20px rgba(168, 85, 247, 0.6);
+    }
+
+    /* table styles - white text */
+    .table-glow {
+      border-collapse: separate;
+      border-spacing: 0 10px;
+    }
+    .table-glow thead th {
+      background: rgba(168, 85, 247, 0.2);
+      backdrop-filter: blur(8px);
+      font-weight: 600;
+      border: none;
+      padding: 14px;
+      color: #ffffff;
+    }
+    .table-glow tbody tr {
+      background: rgba(12, 20, 35, 0.7);
+      backdrop-filter: blur(4px);
+      border-radius: 24px;
+      transition: 0.2s;
+    }
+    .table-glow tbody tr:hover {
+      background: rgba(88, 28, 135, 0.6);
+      transform: scale(1.01);
+      box-shadow: 0 0 12px #a855f7;
+    }
+    .table-glow td {
+      color: #f0f3ff;
+      padding: 14px;
+      border: none;
+    }
+    .search-neon {
+      background: rgba(10, 20, 40, 0.8);
+      border: 1px solid #a855f7;
+      border-radius: 60px;
+      padding: 8px 20px;
+      color: white;
+    }
+    .search-neon:focus {
+      box-shadow: 0 0 12px #a855f7;
+      outline: none;
+      background: #0b1120;
+    }
+    .btn-neon {
+      background: linear-gradient(95deg, #a855f7, #3b82f6);
+      border: none;
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 4px 14px rgba(168, 85, 247, 0.5);
+      transition: all 0.2s;
+    }
+    .btn-neon:hover {
+      transform: scale(1.02);
+      box-shadow: 0 8px 22px rgba(168, 85, 247, 0.8);
+    }
+    .progress-glow {
+      background-color: #1e2a3a;
+      border-radius: 30px;
+      overflow: hidden;
+    }
+    .progress-bar-glow {
+      background: linear-gradient(90deg, #a855f7, #ec4899);
+      box-shadow: 0 0 6px #a855f7;
+    }
+    .chart-container {
+      height: 260px;
+      position: relative;
+    }
+    @media (max-width: 768px) {
+      .sidebar-neon { position: fixed; left: -280px; z-index: 1050; transition: left 0.3s; width: 280px; }
+      .sidebar-neon.show { left: 0; }
+    }
+    .loading-overlay {
+      position: fixed;
+      top:0; left:0; width:100%; height:100%;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(12px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .neon-spinner {
+      width: 65px;
+      height: 65px;
+      border: 4px solid rgba(168,85,247,0.2);
+      border-top: 4px solid #a855f7;
+      border-right: 4px solid #ec4899;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .profile-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #a855f7;
+      cursor: pointer;
+    }
+    .motivation-card {
+      background: linear-gradient(135deg, rgba(168,85,247,0.2), rgba(59,130,246,0.1));
+      border-left: 4px solid #a855f7;
+    }
+    /* vertical profile info rows */
+    .profile-info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+    }
+    .profile-label {
+      font-weight: 600;
+      color: #c084fc;
+      min-width: 130px;
+    }
+    .profile-value {
+      color: #f0f3ff;
+      text-align: right;
+      word-break: break-word;
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+
+<p id="result"></p>
+
+  <div class="glow-orb orb1"></div><div class="glow-orb orb2"></div><div class="glow-orb orb3"></div>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // ----- STUDENT DATA (Updated as requested) -----
+    const studentProfile = {
+      name: "Vijay kumar.T",
+      id: "25it678e945",
+      course: "Information Technology",
+      semester: "4th Semester",
+      cgpa: 8.76,
+      creditsEarned: 68,
+      attendance: 84,
+      status: "🌟 Consistent Performer",
+      hostel: "Hostel - Block C, Room 204",
+      phone: "8979583859",
+      address: "Coimbatore, Tamil Nadu",
+      email: "vijay@gmail.com",
+      dob: "15/11/2007",
+      department: "Information Technology"
+    };
+    
+    // Subjects with Indian Professors
+    const subjectsMarks = [
+      { name: "Python Programming", code: "CS301", credits: 4, marks: 91, grade: "A", semester: 4, faculty: "Dr. S. Rajesh Kumar" },
+      { name: "CSS & Web Design", code: "CS302", credits: 3, marks: 88, grade: "A", semester: 4, faculty: "Prof. Meera Sundar" },
+      { name: "Computer Assembly", code: "CS303", credits: 3, marks: 79, grade: "B+", semester: 4, faculty: "Dr. K. Ananthakrishnan" },
+      { name: "C Programming", code: "CS201", credits: 4, marks: 94, grade: "A+", semester: 3, faculty: "Prof. R. Balachander" },
+      { name: "IT Essentials", code: "CS202", credits: 3, marks: 86, grade: "A-", semester: 3, faculty: "Dr. P. Geetha" },
+      { name: "Machine Learning", code: "CS401", credits: 4, marks: 82, grade: "A", semester: 4, faculty: "Prof. N. Krishnamoorthy" }
+    ];
+    
+    const attendanceRecords = [
+      { subject: "Python Programming", percent: 92 }, { subject: "CSS & Web Design", percent: 88 },
+      { subject: "Computer Assembly", percent: 70 }, { subject: "C Programming", percent: 95 },
+      { subject: "IT Essentials", percent: 82 }, { subject: "Machine Learning", percent: 78 }
+    ];
+    
+    const cgpaHistory = [7.9, 8.2, 8.5, 8.76];
+    
+    // ----- Chart Components -----
+    const LineCGPATrend = () => {
+      const canvasRef = useRef(null); let chartRef = useRef(null);
+      useEffect(() => { if(chartRef.current) chartRef.current.destroy(); const ctx = canvasRef.current.getContext('2d'); chartRef.current = new Chart(ctx, { type: 'line', data: { labels: ['Sem1','Sem2','Sem3','Sem4'], datasets: [{ label: 'CGPA', data: cgpaHistory, borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.05)', borderWidth: 3, pointBackgroundColor: '#ec4899', pointBorderColor: '#fff', tension: 0.3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#cbd5e6' } } } } }); return () => chartRef.current?.destroy(); }, []);
+      return <canvas ref={canvasRef} style={{ width:'100%', height:'100%' }}></canvas>;
+    };
+    
+    const BarMarksChart = () => {
+      const canvasRef = useRef(null); let chartRef = useRef(null);
+      useEffect(() => { if(chartRef.current) chartRef.current.destroy(); const ctx = canvasRef.current.getContext('2d'); chartRef.current = new Chart(ctx, { type: 'bar', data: { labels: subjectsMarks.map(s=>s.name), datasets: [{ label: 'Marks %', data: subjectsMarks.map(s=>s.marks), backgroundColor: '#3b82f6', borderRadius: 12 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 100, grid: { color: '#334155' }, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff', font: { size: 10 } } } }, plugins: { legend: { labels: { color: '#fff' } } } } }); return () => chartRef.current?.destroy(); }, []);
+      return <canvas ref={canvasRef} style={{ width:'100%', height:'100%' }}></canvas>;
+    };
+    const ComparisonBarGraph = ({ subjects, title, color }) => {
+  const canvasRef = useRef(null);
+  let chartRef = useRef(null);
+
+  useEffect(() => {
+    if (chartRef.current) chartRef.current.destroy();
+
+    const ctx = canvasRef.current.getContext('2d');
+
+    chartRef.current = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: subjects.map(s => s.name),
+        datasets: [{
+          label: 'Marks (%)',
+          data: subjects.map(s => s.marks),
+          backgroundColor: color || '#a855f7',
+          borderRadius: 12,
+          borderSkipped: false,
+          barPercentage: 0.5,
+          categoryPercentage: 0.6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false, // 🔥 KEY FIX
+        scales: {
+          y: {
+            max: 100,
+            beginAtZero: true,
+            ticks: { color: '#fff' }
+          },
+          x: {
+            ticks: {
+              color: '#fff',
+              font: { size: 10 }
+            }
+          }
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+
+    return () => chartRef.current?.destroy();
+  }, [subjects]);
+
+  return (
+    <div style={{ height: "220px", width: "100%", position: "relative" }}>
+      <canvas ref={canvasRef}></canvas>
+    </div>
+  );
+};
+    // CGPA Calculator Component
+    const CGPACalcModule = () => {
+      const [rows, setRows] = useState([{ subject: "Python", credits: 4, grade: "A" }]);
+      const [result, setResult] = useState(null);
+      const gradePoints = { "A+":10, "A":9, "A-":8, "B+":7, "B":6, "C":5 };
+      const addRow = () => setRows([...rows, { subject: "", credits: 3, grade: "A" }]);
+      const removeRow = (idx) => setRows(rows.filter((_,i)=>i!==idx));
+      const update = (idx, field, val) => { const newRows = [...rows]; newRows[idx][field] = val; setRows(newRows); };
+      const compute = () => { let total=0, cred=0; rows.forEach(r=>{ let gp=gradePoints[r.grade]||0; total+=gp*(Number(r.credits)||0); cred+=Number(r.credits)||0; }); if(cred) setResult((total/cred).toFixed(2)); else setResult(0); };
+      return (<div className="glass-card p-4"><h5 className="fw-bold mb-3"><i className="bi bi-calculator-fill text-purple"></i> CGPA Module</h5>{rows.map((row,idx)=>(<div key={idx} className="row g-2 mb-2"><div className="col-5"><input className="form-control bg-dark text-white" placeholder="Subject" value={row.subject} onChange={e=>update(idx,'subject',e.target.value)}/></div><div className="col-2"><input type="number" className="form-control bg-dark text-white" value={row.credits} onChange={e=>update(idx,'credits',e.target.value)}/></div><div className="col-3"><select className="form-select bg-dark text-white" value={row.grade} onChange={e=>update(idx,'grade',e.target.value)}><option>A+</option><option>A</option><option>A-</option><option>B+</option><option>B</option><option>C</option></select></div><div className="col-2"><button className="btn btn-sm btn-outline-danger" onClick={()=>removeRow(idx)}><i className="bi bi-trash"></i></button></div></div>))}<div className="d-flex gap-2 mt-3"><button className="btn btn-outline-light rounded-pill" onClick={addRow}>+ Add Subject</button><button className="btn-neon rounded-pill px-4" onClick={compute}>Calculate CGPA</button></div>{result && <div className="alert alert-success mt-3 text-center fw-bold">🎯 Estimated CGPA: {result}/10</div>}</div>);
+    };
+
+    // Main App Component
+    const App = () => {
+      const [loggedIn, setLoggedIn] = useState(false);
+      const [loading, setLoading] = useState(false);
+      const [activePage, setActivePage] = useState("dashboard");
+      const [searchTerm, setSearchTerm] = useState("");
+      const [semFilter, setSemFilter] = useState("");
+      const [sidebarOpen, setSidebarOpen] = useState(false);
+      const [selectedComparison, setSelectedComparison] = useState(null); // 'strength' or 'weakness'
+      const [profileImage, setProfileImage] = useState(null);
+      
+      const handleNavClick = (page) => { setActivePage(page); setSelectedComparison(null); };
+      
+      const handleLogin = (e) => { e.preventDefault(); setLoading(true); setTimeout(() => { setLoading(false); setLoggedIn(true); setActivePage("dashboard"); }, 2000); };
+      
+      const filteredMarks = subjectsMarks.filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()) && (semFilter ? m.semester.toString() === semFilter : true));
+      const bestSubjects = subjectsMarks.filter(s => s.marks >= 88);
+      const weakSubjects = subjectsMarks.filter(s => s.marks < 80);
+      
+      const handleImageUpload = (e) => { const file = e.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = (ev) => setProfileImage(ev.target.result); reader.readAsDataURL(file); } };
+      
+      const ProfilePage = () => (
+        <div className="p-4">
+          <div className="glass-card p-4">
+            <div className="text-center mb-4">
+              <label htmlFor="profileUpload" style={{cursor:'pointer'}}>
+                {profileImage ? <img src={profileImage} className="profile-avatar" alt="Profile"/> : <div className="profile-avatar bg-gradient d-flex align-items-center justify-content-center mx-auto" style={{background:'linear-gradient(135deg,#a855f7,#3b82f6)'}}><i className="bi bi-person-fill fs-1 text-white"></i></div>}
+              </label>
+              <input type="file" id="profileUpload" accept="image/*" style={{display:'none'}} onChange={handleImageUpload} />
+              <h3 className="mt-3 fw-bold">{studentProfile.name}</h3>
+              <p className="text-light-50">{studentProfile.id}</p>
+            </div>
+            <div className="profile-info-row"><span className="profile-label">🏷️ Student ID</span><span className="profile-value">{studentProfile.id}</span></div>
+            <div className="profile-info-row"><span className="profile-label">📧 Email ID</span><span className="profile-value">{studentProfile.email}</span></div>
+            <div className="profile-info-row"><span className="profile-label">📞 Phone Number</span><span className="profile-value">{studentProfile.phone}</span></div>
+            <div className="profile-info-row"><span className="profile-label">🏠 Hostel / Day Scholar</span><span className="profile-value">{studentProfile.hostel}</span></div>
+            <div className="profile-info-row"><span className="profile-label">📍 Address</span><span className="profile-value">{studentProfile.address}</span></div>
+            <div className="profile-info-row"><span className="profile-label">🎓 Department</span><span className="profile-value">{studentProfile.department}</span></div>
+            <div className="profile-info-row"><span className="profile-label">📅 Date of Birth</span><span className="profile-value">{studentProfile.dob}</span></div>
+            <div className="profile-info-row"><span className="profile-label">📚 Course</span><span className="profile-value">{studentProfile.course}</span></div>
+            <div className="profile-info-row"><span className="profile-label">📖 Semester</span><span className="profile-value">{studentProfile.semester}</span></div>
+            <div className="mt-4"><button className="btn btn-outline-light rounded-pill w-100" onClick={()=>alert("Profile updated successfully (demo)")}>Save Changes</button></div>
+          </div>
+        </div>
+      );
+      
+      const AnalysisPage = () => (
+        <div className="p-4">
+          <div className="row g-4 mb-4">
+            <div className="col-md-6">
+              <div className="glass-card p-3 text-center" style={{cursor:'pointer'}} onClick={()=> setSelectedComparison(selectedComparison === 'strength' ? null : 'strength')}>
+                <i className="bi bi-graph-up-arrow fs-1 text-success"></i>
+                <h5 className="mt-2">📈 Strengths</h5>
+                <p>{bestSubjects.map(s=>s.name).join(', ') || 'All subjects strong'}</p>
+                <small className="text-muted">{selectedComparison === 'strength' ? '▼ Hide graph' : '▶ Click to view bar graph'}</small>
+              </div>
+            </div>
+            <div className="col-md-6">
+              <div className="glass-card p-3 text-center" style={{cursor:'pointer'}} onClick={()=> setSelectedComparison(selectedComparison === 'weakness' ? null : 'weakness')}>
+                <i className="bi bi-arrow-down-short fs-1 text-warning"></i>
+                <h5>⚠️ Areas to Improve</h5>
+                <p>{weakSubjects.length ? weakSubjects.map(s=>s.name).join(', ') : 'No weak areas! Great job 🎉'}</p>
+                <small className="text-muted">{selectedComparison === 'weakness' ? '▼ Hide tips & graph' : '▶ Click for improvement roadmap'}</small>
+              </div>
+            </div>
+          </div>
+          
+          {selectedComparison === 'strength' && bestSubjects.length > 0 && (
+            <div className="glass-card p-4 mb-4">
+              <h5 className="fw-bold"><i className="bi bi-bar-chart-steps"></i> Your Strengths Performance</h5>
+              <ComparisonBarGraph subjects={bestSubjects} title="Strengths" color="#22c55e" />
+              <p className="mt-3 text-center text-success">✨ Outstanding! Maintain this momentum.</p>
+            </div>
+          )}
+          
+          {selectedComparison === 'weakness' && weakSubjects.length > 0 && (
+            <div className="glass-card p-4 mb-4">
+              <h5 className="fw-bold"><i className="bi bi-lightbulb"></i> Improvement Roadmap 📘</h5>
+              <ComparisonBarGraph subjects={weakSubjects} title="Weak Areas" color="#f97316" />
+              {weakSubjects.map((sub,idx) => (
+                <div key={idx} className="motivation-card p-3 mb-3 rounded">
+                  <h6 className="text-warning">{sub.name} - {sub.marks}%</h6>
+                  <p><i className="bi bi-quote"></i> "Every expert was once a beginner. Focus on fundamentals and practice daily."</p>
+                  <ul className="small">
+                    <li>📚 Dedicate 1hr extra per day to {sub.name}</li>
+                    <li>🎯 Solve previous year question papers</li>
+                    <li>👥 Join study groups & peer discussion</li>
+                    <li>📹 Watch concept videos from NPTEL/Coursera</li>
+                  </ul>
+                </div>
+              ))}
+              <div className="alert alert-info mt-2"><i className="bi bi-emoji-smile"></i> "Your potential is limitless — small consistent efforts create massive results!"</div>
+            </div>
+          )}
+          
+          {!selectedComparison && (
+            <div className="glass-card p-4 text-center">
+              <p><i className="bi bi-info-circle fs-3"></i><br/>Click on <strong className="text-success">Strengths</strong> to see bar graph or <strong className="text-warning">Areas to Improve</strong> for personalized study tips and visual analysis.</p>
+            </div>
+          )}
+        </div>
+      );
+      
+      const DashboardContent = () => (
+        <div className="p-4">
+          <div className="row g-4 mb-4">
+            <div className="col-md-3"><div className="glass-card p-3 text-center"><i className="bi bi-trophy-fill fs-1 text-warning"></i><h2 className="fw-bold">{studentProfile.cgpa}</h2><p>CGPA</p></div></div>
+            <div className="col-md-3"><div className="glass-card p-3 text-center"><i className="bi bi-patch-check fs-1 text-info"></i><h3>{studentProfile.creditsEarned}</h3><p>Credits</p></div></div>
+            <div className="col-md-3"><div className="glass-card p-3 text-center"><i className="bi bi-person-workspace fs-1 text-success"></i><h3>{studentProfile.attendance}%</h3><p>Attendance</p></div></div>
+            <div className="col-md-3"><div className="glass-card p-3 text-center"><i className="bi bi-stars fs-1 text-danger"></i><h5 className="mt-2">{studentProfile.status}</h5><p>Status</p></div></div>
+          </div>
+          <div className="glass-card p-4 mb-4">
+            <div className="row"><div className="col-md-6"><p><i className="bi bi-person-badge"></i> {studentProfile.name} | ID: {studentProfile.id}</p><p><i className="bi bi-mortarboard"></i> {studentProfile.course} • {studentProfile.semester}</p></div><div className="col-md-6"><p><i className="bi bi-house-door"></i> {studentProfile.hostel}</p><p><i className="bi bi-telephone"></i> {studentProfile.phone}</p></div></div>
+          </div>
+          <div className="row g-4"><div className="col-lg-6"><div className="glass-card p-3"><div className="chart-container"><LineCGPATrend /></div><p className="text-center mt-2">CGPA Progression</p></div></div><div className="col-lg-6"><div className="glass-card p-3"><div className="chart-container"><BarMarksChart /></div><p className="text-center">Subject-wise Marks</p></div></div></div>
+        </div>
+      );
+      
+      const MarksContent = () => (
+        <div className="p-4"><div className="d-flex flex-wrap gap-3 mb-4"><input className="search-neon" placeholder="🔍 Search subject..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}/><select className="search-neon" onChange={e=>setSemFilter(e.target.value)}><option value="">All Semesters</option><option>4</option><option>3</option></select></div><div className="glass-card p-3 overflow-auto"><table className="table table-glow w-100"><thead><tr><th>Subject</th><th>Code</th><th>Credits</th><th>Marks</th><th>Grade</th><th>Faculty</th><th>Sem</th></tr></thead><tbody>{filteredMarks.map((m,i)=> <tr key={i}><td>{m.name}</td> <td>{m.code}</td><td>{m.credits}</td><td>{m.marks}%</td><td>{m.grade}</td><td>{m.faculty}</td><td>{m.semester}</td></tr>)}</tbody></table></div></div>
+      );
+      
+      const AttendanceContent = () => (<div className="p-4"><h4 className="fw-bold mb-3"><i className="bi bi-calendar-check"></i> Subject-wise Attendance</h4>{attendanceRecords.map((a,idx)=><div key={idx} className="glass-card p-3 mb-3"><div className="d-flex justify-content-between"><span>{a.subject}</span><span className={a.percent<75?"text-danger fw-bold":""}>{a.percent}%</span></div><div className="progress progress-glow mt-2"><div className="progress-bar" style={{width:`${a.percent}%`, background:'linear-gradient(90deg,#a855f7,#ec4899)'}}></div></div></div>)}</div>);
+      
+      const SubjectsPage = () => (<div className="p-4"><div className="row g-4">{subjectsMarks.map((sub,i)=><div className="col-md-6 col-lg-4" key={i}><div className="glass-card p-3"><i className="bi bi-journal-bookmark-fill text-purple fs-3"></i><h5 className="mt-2">{sub.name}</h5><p>Credits: {sub.credits}<br/>👩‍🏫 {sub.faculty}<br/>📖 Code: {sub.code}</p></div></div>)}</div></div>);
+      
+      const AnnouncementsPage = () => (<div className="p-4"><div className="row g-4"><div className="col-md-6"><div className="glass-card p-3"><h5><i className="bi bi-megaphone"></i> 📢 Exam Schedule</h5><p>April 25, 2025</p><p>End-semester exams starting May 10th. Timetable released.</p></div></div><div className="col-md-6"><div className="glass-card p-3"><h5>📝 Assignment Deadline</h5><p>April 18, 2025</p><p>Machine Learning project submission extended.</p></div></div><div className="col-md-6"><div className="glass-card p-3"><h5>🎓 Guest Lecture</h5><p>April 20, 2025</p><p>AI in Industry by Dr. Rajesh Kumar.</p></div></div></div></div>);
+      
+      const CalendarPage = () => (<div className="p-4"><div className="glass-card p-4"><h4 className="fw-bold mb-3">📅 Academic Calendar</h4><ul className="list-group list-group-flush bg-transparent"><li className="list-group-item bg-transparent text-white border-secondary"><i className="bi bi-calendar-event me-2 text-info"></i><strong>Apr 15</strong> – Mid-term break</li><li className="list-group-item bg-transparent text-white border-secondary"><i className="bi bi-calendar-event me-2 text-info"></i><strong>Apr 20</strong> – Guest Lecture: AI Ethics</li><li className="list-group-item bg-transparent text-white border-secondary"><i className="bi bi-calendar-event me-2 text-info"></i><strong>Apr 28</strong> – Lab Submissions</li><li className="list-group-item bg-transparent text-white border-secondary"><i className="bi bi-calendar-event me-2 text-info"></i><strong>May 5</strong> – Exam preparation begins</li></ul></div></div>);
+      
+      if(!loggedIn) return (
+        <div className="d-flex justify-content-center align-items-center vh-100 position-relative" style={{zIndex:10}}>
+          <div className="glass-card p-4 p-md-5" style={{maxWidth:'460px', width:'90%'}}><div className="text-center mb-3"><span className="floating-cap" style={{fontSize:'3rem'}}>🎓</span><h1 className="fw-bold" style={{background:'linear-gradient(135deg,#a855f7,#ec4899)', WebkitBackgroundClip:'text', backgroundClip:'text', color:'transparent'}}>Evalora</h1><p>AI Student Grading System</p></div><form onSubmit={handleLogin}><input type="email" className="form-control mb-3 rounded-pill py-2 bg-dark text-white border-secondary" placeholder="Edu Email ID" defaultValue="vijay@evalora.edu" required/><input type="password" className="form-control mb-3 rounded-pill py-2 bg-dark text-white" placeholder="Password" defaultValue="secure123" required/><button className="btn-neon w-100 rounded-pill py-2 fw-bold">Login →</button></form></div>
+          {loading && <div className="loading-overlay"><div className="neon-spinner"></div></div>}
+        </div>
+      );
+      
+      return (
+        <div className="d-flex position-relative">
+          <div className={`sidebar-neon ${sidebarOpen ? "show" : ""}`} style={{width:'280px', flexShrink:0}}><div className="p-3 pt-4"><h4 className="fw-bold">✨ Evalora</h4></div>
+            {["dashboard","marks","analysis","attendance","cgpa","subjects","announcements","calendar","profile"].map(page => {
+              const icons = {dashboard:"bi-speedometer2", marks:"bi-table", analysis:"bi-graph-up", attendance:"bi-calendar-check", cgpa:"bi-calculator", subjects:"bi-book-half", announcements:"bi-megaphone", calendar:"bi-calendar-week", profile:"bi-person-circle"};
+              return <button key={page} onClick={()=>{setActivePage(page); setSidebarOpen(false); setSelectedComparison(null);}} className={`nav-pill ${activePage===page?'active':''}`}><i className={icons[page]}></i> {page.charAt(0).toUpperCase()+page.slice(1)}</button>
+            })}
+          </div>
+          <div className="flex-grow-1" style={{overflow:'hidden'}}>
+            <div className="navbar-neon d-flex justify-content-between align-items-center flex-wrap">
+              <div className="d-flex align-items-center gap-3"><button className="d-md-none btn btn-outline-light rounded-circle" onClick={()=>setSidebarOpen(true)}><i className="bi bi-list"></i></button><i className="bi bi-person-circle fs-4"></i><span className="fw-semibold">{studentProfile.name}</span></div>
+              <div className="d-none d-md-flex gap-4 flex-wrap"><button onClick={()=>handleNavClick("dashboard")} className="nav-glow-link">Home</button><button onClick={()=>handleNavClick("dashboard")} className="nav-glow-link">About Us</button><button onClick={()=>handleNavClick("cgpa")} className="nav-glow-link">CGPA Calculator</button><button onClick={()=>handleNavClick("announcements")} className="nav-glow-link">Announcements</button><button onClick={()=>handleNavClick("dashboard")} className="nav-glow-link">Contact</button><button onClick={()=>handleNavClick("subjects")} className="nav-glow-link">Resources</button></div>
+              <div className="d-flex align-items-center gap-2"><div className="floating-cap me-1">🎓</div><div className="fw-bold">Evalora</div></div>
+            </div>
+            {activePage === "dashboard" && <DashboardContent />}
+            {activePage === "marks" && <MarksContent />}
+            {activePage === "analysis" && <AnalysisPage />}
+            {activePage === "attendance" && <AttendanceContent />}
+            {activePage === "cgpa" && <CGPACalcModule />}
+            {activePage === "subjects" && <SubjectsPage />}
+            {activePage === "announcements" && <AnnouncementsPage />}
+            {activePage === "calendar" && <CalendarPage />}
+            {activePage === "profile" && <ProfilePage />}
+          </div>
+          {sidebarOpen && <div className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-75" style={{zIndex:1040}} onClick={()=>setSidebarOpen(false)}></div>}
+        </div>
+      );
+    };
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    
+async function sendData() {
+    const name = document.getElementById("nameInput").value;
+
+    const response = await fetch("http://127.0.0.1:5000/generate", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ name: name })
+    });
+
+    const data = await response.json();
+    document.getElementById("result").innerText = data.message;
+}
+
+  </script>
+</body>
+</html>
